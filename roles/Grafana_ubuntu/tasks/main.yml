@@ -1,0 +1,28 @@
+---
+# tasks file for Grafana-Prometheus_ubuntu
+- name: Installation of necessary packages
+  apt:
+    name: apt-transport-https
+    state: present
+    update_cache: yes
+- name: Adding APT key of grafana
+  apt_key:
+    url: https://packages.grafana.com/gpg.key
+    state: present
+
+- name: Adding the repository to apt
+  apt_repository:
+    repo: deb https://packages.grafana.com/oss/deb stable main
+    state: present
+    filename: grafana
+- name: Installaion of grafana
+  apt:
+    name: grafana
+    state: present
+    update_cache: yes
+- name: Enable and start Grafana Service
+  service:
+    name: grafana-server
+    enabled: yes
+    state: started
+

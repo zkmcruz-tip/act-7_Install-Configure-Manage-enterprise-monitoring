@@ -1,0 +1,26 @@
+---
+# tasks file for Grafana-Prometheus_centos
+- name: Register grafana RPM key
+  rpm_key:
+    key: https://packages.grafana.com/gpg.key
+    state: present
+- name: Install the grafana repo in yum
+  yum_repository:
+    name: grafana
+    description: grafana packages
+    baseurl: https://packages.grafana.com/oss/rpm
+    gpgcheck: true
+    gpgkey: https://packages.grafana.com/gpg.key
+- name: Installation of Grafana
+  yum:
+    name: grafana
+    state: present
+- name: Verify if grafana is installed
+  yum:
+    name: grafana
+    state: installed
+- name: Enable and run Grafana services
+  service:
+    name: grafana-server
+    state: started
+    enabled: yes

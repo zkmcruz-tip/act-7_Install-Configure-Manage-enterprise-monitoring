@@ -1,0 +1,113 @@
+---
+# tasks file for Nagios_centos
+- name: Install nagios dependencies
+  yum:
+    state: latest
+    name:
+    - gcc
+    - glibc
+    - glibc-common
+    - perl
+    - httpd
+    - php
+    - wget
+    - gd
+        # Installation
+- name: Stop firewall
+  service: 
+    name: firewalld
+    state: stopped
+    enabled: no
+- name: Download and Unpack Nagios
+  unarchive:
+    src: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.5.tar.gz
+    dest: /tmp/
+    remote_src: yes
+  register: nagios_source
+
+- name: Create file
+  shell: cd /tmp/nagioscore-nagios-4.4.5; sh /tmp/nagioscore-nagios-4.4.5/configure
+  register: make_file
+  when: nagios_source.changed
+
+- name: Compile the imported file 
+  make:
+    chdir: /tmp/nagioscore-nagios-4.4.5/
+    target: all
+  when: make_file.changed
+
+- name: Create user and group
+  make:
+    chdir: /tmp/nagioscore-nagios-4.4.5/
+    target: install-groups-users
+  when: make_file.changed
+
+- name: Add apache to group
+  user:
+    name: apache
+    groups: nagios
+    append: yes
+
+- name: Install the nagios
+  make:
+    chdir: /tmp/nagioscore-nagios-4.4.5/
+    target: install
+  when: make_file.changed
+
+- name: Install service to daemon
+  make:
+    chdir: /tmp/nagioscore-nagios-4.4.5/
+    target: install-daemoninit
+  register: daemoninit
+  when: make_file.changed
+- name: enable the httpd service
+  service:
+    name: httpd
+    enabled: yes
+  when: daemoninit.changed
+
+- name: Create the command mode of nagios
+  make:
+    chdir: /tmp/nagioscore-nagios-4.4.5/
+    target: install-commandmode
+  when: make_file.changed
+
+- name: Create the config file for nagios
+  make:
+    chdir: /tmp/nagioscore-nagios-4.4.5/
+    target: install-config
+  when: make_file.changed
+
+- name: Initialize Apache and its config
+  make:
+    chdir: /tmp/nagioscore-nagios-4.4.5/
+    target: install-webconf
+  register: install_webconf
+  when: make_file.changed
+
+- name: Create nagios service
+  copy:
+    content: |
+      [Unit]
+      Description=Nagios
+      BindTo=network.target
+      [Install]
+      WantedBy=multi-user.target
+      [Service]
+      User=nagios
+      Group=nagios
+      Type=simple
+      ExecStart=/usr/local/nagios/bin/nagios /usr/local/nagios/etc/nagios.cfg
+    dest: "/etc/systemd/system/nagios.service"
+- name: Start and enable the service of Apache2
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+  when: install_webconf.changed
+
+- name: Start and enable nagios service
+  service:
+    name: nagios
+    state: started
+    enabled: yes

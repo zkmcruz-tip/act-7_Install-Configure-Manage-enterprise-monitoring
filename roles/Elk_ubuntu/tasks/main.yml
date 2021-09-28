@@ -1,0 +1,55 @@
+---
+# tasks file for Elk_ubuntu
+- name: Importing Elastic Key
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+- name: Adding the APT repository for the ELK
+  apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    state: present
+    filename: elastic-7.x.list
+    update_cache: yes
+
+- name: Install ELK
+  apt:
+    name: elasticsearch
+    state: present
+    update_cache: yes
+- name: Reload the system config
+  systemd:
+    name: daemon_reload=yes
+- name: Enable the service and modify to unmasked
+  systemd:
+    name: elasticsearch
+    enabled: yes
+    masked: no
+- name: Run the ELK
+  systemd: state=started name=elasticsearch
+
+ 
+
+#- name: Configure elastic file
+#  copy:
+#    src: ~/elasticsearch.yml
+#    owner: root
+#    group: elasticsearch
+#    Uncomment if you want to modify elastic search which in  the scenario 
+#    No config is applicable or knowledgeable
+#    Just remove all hashes to execute if you have the config
+
+- name: Set elasticsearch permission
+  file:
+    path: /usr/share/elasticsearch
+    state: directory
+    recurse: yes
+    owner: elasticsearch
+    group: elasticsearch
+
+- name: Restart elasticsearch service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: elasticsearch
+
+

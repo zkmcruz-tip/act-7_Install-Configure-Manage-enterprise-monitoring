@@ -1,0 +1,54 @@
+---
+- name: Install ELK for Debian or RedHat distributions
+  hosts: install_ELK
+  become: yes
+  tasks:
+    - name: Install ELK for Ubuntu VM
+      tags: elk_ubuntu
+      import_role:
+        name: Elk_ubuntu
+      when: ansible_facts['os_family'] == "Debian"
+    - name: Install ELK for CentOS VM
+      tags: elk_centos
+      import_role:
+        name: Elk_centos
+      when: ansible_facts['os_family'] == "RedHat"
+      
+
+    - name: Install Nagios for Ubuntu
+      tags: nagios_ubuntu
+      import_role:
+        name: Nagios_ubuntu
+      when: ansible_facts['os_family'] == "Debian"
+
+
+    - name: Install Nagios for CentOS
+      tags: nagios_centos
+      import_role:
+        name: Nagios_centos
+      when: ansible_facts['os_family'] == "RedHat"
+
+
+    - name: Install Grafana for Ubuntu
+      tags: grafana_ubuntu
+      import_role:
+        name: Grafana_ubuntu
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install Grafana for CentOs
+      tags: grafana_centos
+      import_role:
+        name: Grafana_centos
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Install Prometheus for Ubuntu
+      tags: prometheus_ubuntu
+      import_role:
+        name: Prometheus_ubuntu
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install Prometheus for CentOS
+      tags: prometheus_centos
+      import_role:
+        name: Prometheus_centos
+      when: ansible_facts['os_family'] == "RedHat"     

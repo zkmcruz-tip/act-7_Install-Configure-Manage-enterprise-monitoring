@@ -1,0 +1,43 @@
+---
+- name: Get ELK rpm key
+  rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  
+- name: Install ELK 7.x rpm repo
+  yum_repository:
+    name: elasticsearch-7.x
+    description: Elasticsearch repository for 7.x packages
+    baseurl: https://artifacts.elastic.co/packages/7.x/yum
+    gpgcheck: True
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+- name: Install Java
+  yum:
+    name: java-11-openjdk-devel
+    state: present
+    update_cache: True
+- name: Install ELK
+  yum:
+    name: elasticsearch
+    state: latest
+    update_cache: True
+
+
+    #CONFIGURE
+
+- name: Create a service directory for drop-ins
+  file:
+    path: /etc/systemd/system/elasticsearch.service.d
+    state: directory
+    mode: '0755'
+
+
+- name: Reload the service daemon
+  shell: systemctl daemon-reload
+
+- name: Enable, modify to unmasked, and enable ELK
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+    masked: no

@@ -1,0 +1,123 @@
+---
+# tasks file for Prometheus_centos
+#
+# INSTALLATION OF DEPENDENCIES
+- name: Install Nginx
+  yum:
+    name: nginx
+    state: latest
+    update_cache: yes
+- name: Enable the Nginx service
+  service:
+    name: nginx
+    state: started
+
+# CREATE DIRECTORIES RELATED TO PROMETHEUS
+
+- name: Create etc file
+  file:
+    path: /etc/prometheus
+    state: directory
+    mode: '0755'
+- name: Create var/lib file
+  file:
+    path: /var/lib/prometheus
+    state: directory
+    mode: '0755'
+- name: Create var/log file
+  file:
+    path: /var/log/prometheus
+    state: directory
+    mode: '0755'
+- name: Create var/run file
+  file:
+    path: /var/run/prometheus
+    state: directory
+    mode: '0755'
+
+
+# DOWNLOAD AND UNCOMPRESS PROMETHEUS
+
+- name: Download and uncompress Prometheus
+  unarchive:
+    src: "https://github.com/prometheus/prometheus/releases/download/v2.2.1/prometheus-2.2.1.linux-amd64.tar.gz"
+    dest: /tmp/
+    remote_src: yes
+  register: prometheus_archive
+
+- name: Copy Prometheus to /usr/local/bin
+  shell: "cp /tmp/prometheus-2.2.1.linux-amd64/prometheus /usr/local/bin"
+  #  when: prometheus_archive.changed
+- name: promtool to /usr/local/bin
+  shell: "cp /tmp/prometheus-2.2.1.linux-amd64/promtool /usr/local/bin"
+  #  when: prometheus.archive.changed
+
+- name: Make prometheus executable
+  file:
+    path: /usr/local/bin/prometheus
+    mode: u+x,g+x,o+x
+- name: Make promtool executeable 
+  file:
+    path: /usr/local/bin/promtool
+    mode: u+x,g+x,o+x
+
+# COPY CONTENTS OF UNCOMPRESSED FILE TO ETC
+
+- name: Copy prometheus config(yml) to /etc/
+  shell: "cp /tmp/prometheus-2.2.1.linux-amp64/prometheus.yml /etc/prometheus/"
+  when: prometheus_archive.changed
+- name: Copy consoles to to /etc/
+  shell: "cp /tmp/prometheus-2.2.1.linux-amp64/consoles /etc/prometheus/"
+  when: prometheus_archive.changed
+- name: Copy console_library to /etc/
+  shell: "cp /tmp/prometheus-2.2.1.linux-amp64/console_libraries /etc/prometheus/"
+  when: prometheus_archive.changed
+
+# CREATE THE PROMETHEUS SERVICE AND ENABLE
+- name: Create prometheus.service config into the systemd/system/
+  copy:
+    content: |
+      [Unit]
+      Description=Prometheus
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      User=root
+      Group=root
+      Type=simple
+      ExecStart=/usr/local/bin/prometheus \
+          --config.file /etc/prometheus/prometheus.yml \ 
+          --storage.tsdb.path /var/lib/prometheus/ \
+          --web.console.templates=/etc/prometheus/consoles \ 
+          --web.console.libraries=/etc/prometheus/console_libraries
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/prometheus.service
+    mode: '0755'
+- name: Restart Daemon Services
+  systemd:
+    name: prometheus
+    state: restarted
+    daemon_reload: yes
+- name: Enable and start prometheus
+  service:
+    name: prometheus
+    state: started
+    enabled: yes
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
